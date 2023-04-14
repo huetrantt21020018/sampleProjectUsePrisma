@@ -155,3 +155,4 @@ model products {
 
   @@index([productLine], map: "productLine")
 }
+
