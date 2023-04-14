@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:hocUETkhoa2125@localhost:3306/classicmodels"
+}
+
+model customers {
+  customerNumber         Int        @id
+  customerName           String     @db.VarChar(50)
+  contactLastName        String     @db.VarChar(50)
+  contactFirstName       String     @db.VarChar(50)
+  phone                  String     @db.VarChar(50)
+  addressLine1           String     @db.VarChar(50)
+  addressLine2           String?    @db.VarChar(50)
+  city                   String     @db.VarChar(50)
+  state                  String?    @db.VarChar(50)
+  postalCode             String?    @db.VarChar(15)
+  country                String     @db.VarChar(50)
+  salesRepEmployeeNumber Int?
+  creditLimit            Decimal?   @db.Decimal(10, 2)
+  employees              employees? @relation(fields: [salesRepEmployeeNumber], references: [employeeNumber], onDelete: NoAction, onUpdate: NoAction, map: "customers_ibfk_1")
+  orders                 orders[]
+  payments               payments[]
+
+  @@index([salesRepEmployeeNumber], map: "salesRepEmployeeNumber")
+}
+
+model employees {
+  employeeNumber  Int             @id
+  lastName        String          @db.VarChar(50)
+  firstName       String          @db.VarChar(50)
+  extension       String          @db.VarChar(10)
+  email           String          @db.VarChar(100)
+  officeCode      String          @db.VarChar(10)
+  reportsTo       Int?
+  jobTitle        String          @db.VarChar(50)
+  customers       customers[]
+  employees       employees?      @relation("employeesToemployees", fields: [reportsTo], references: [employeeNumber], onDelete: NoAction, onUpdate: NoAction, map: "employees_ibfk_1")
+  other_employees employees[]     @relation("employeesToemployees")
+  offices         offices         @relation(fields: [officeCode], references: [officeCode], onDelete: NoAction, onUpdate: NoAction, map: "employees_ibfk_2")
+  new_customers   new_customers[]
+
+  @@index([officeCode], map: "officeCode")
+  @@index([reportsTo], map: "reportsTo")
+}
+
+model new_customers {
+  customerNumber         Int        @id
+  customerName           String     @db.VarChar(50)
+  contactLastName        String     @db.VarChar(50)
+  contactFirstName       String     @db.VarChar(50)
+  phone                  String     @db.VarChar(50)
+  addressLine1           String     @db.VarChar(50)
+  addressLine2           String?    @db.VarChar(50)
+  city                   String     @db.VarChar(50)
+  state                  String?    @db.VarChar(50)
+  postalCode             String?    @db.VarChar(15)
+  country                String     @db.VarChar(50)
+  salesRepEmployeeNumber Int?
+  creditLimit            Decimal?   @db.Decimal(10, 2)
+  employees              employees? @relation(fields: [salesRepEmployeeNumber], references: [employeeNumber], onDelete: NoAction, onUpdate: NoAction, map: "customers_ibfk_2")
+
+  @@index([salesRepEmployeeNumber], map: "salesRepEmployeeNumber")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model new_products {
+  id                 Int     @id @default(autoincrement())
+  productCode        String  @db.VarChar(15)
+  productName        String  @db.VarChar(70)
+  productLine        String  @db.VarChar(50)
+  productScale       String  @db.VarChar(10)
+  productVendor      String  @db.VarChar(50)
+  productDescription String  @db.Text
+  quantityInStock    Int     @db.SmallInt
+  buyPrice           Decimal @db.Decimal(10, 2)
+  MSRP               Decimal @db.Decimal(10, 2)
+
+  @@ignore
+}
+
+model offices {
+  officeCode   String      @id @db.VarChar(10)
+  city         String      @db.VarChar(50)
+  phone        String      @db.VarChar(50)
+  addressLine1 String      @db.VarChar(50)
+  addressLine2 String?     @db.VarChar(50)
+  state        String?     @db.VarChar(50)
+  country      String      @db.VarChar(50)
+  postalCode   String      @db.VarChar(15)
+  territory    String      @db.VarChar(10)
+  employees    employees[]
+}
+
+model orderdetails {
+  orderNumber     Int
+  productCode     String   @db.VarChar(15)
+  quantityOrdered Int
+  priceEach       Decimal  @db.Decimal(10, 2)
+  orderLineNumber Int      @db.SmallInt
+  orders          orders   @relation(fields: [orderNumber], references: [orderNumber], onDelete: NoAction, onUpdate: NoAction, map: "orderdetails_ibfk_1")
+  products        products @relation(fields: [productCode], references: [productCode], onDelete: NoAction, onUpdate: NoAction, map: "orderdetails_ibfk_2")
+
+  @@id([orderNumber, productCode])
+  @@index([productCode], map: "productCode")
+}
+
+model orders {
+  orderNumber    Int            @id
+  orderDate      DateTime       @db.Date
+  requiredDate   DateTime       @db.Date
+  shippedDate    DateTime?      @db.Date
+  status         String         @db.VarChar(15)
+  comments       String?        @db.Text
+  customerNumber Int
+  orderdetails   orderdetails[]
+  customers      customers      @relation(fields: [customerNumber], references: [customerNumber], onDelete: NoAction, onUpdate: NoAction, map: "orders_ibfk_1")
+
+  @@index([customerNumber], map: "customerNumber")
+}
+
+model payments {
+  customerNumber Int
+  checkNumber    String    @db.VarChar(50)
+  paymentDate    DateTime  @db.Date
+  amount         Decimal   @db.Decimal(10, 2)
+  customers      customers @relation(fields: [customerNumber], references: [customerNumber], onDelete: NoAction, onUpdate: NoAction, map: "payments_ibfk_1")
+
+  @@id([customerNumber, checkNumber])
+}
+
+model productlines {
+  productLine     String     @id @db.VarChar(50)
+  textDescription String?    @db.VarChar(4000)
+  htmlDescription String?    @db.MediumText
+  image           Bytes?     @db.MediumBlob
+  products        products[]
+}
+
+model products {
+  productCode        String         @id @db.VarChar(15)
+  productName        String         @db.VarChar(70)
+  productLine        String         @db.VarChar(50)
+  productScale       String         @db.VarChar(10)
+  productVendor      String         @db.VarChar(50)
+  productDescription String         @db.Text
+  quantityInStock    Int            @db.SmallInt
+  buyPrice           Decimal        @db.Decimal(10, 2)
+  MSRP               Decimal        @db.Decimal(10, 2)
+  orderdetails       orderdetails[]
+  productlines       productlines   @relation(fields: [productLine], references: [productLine], onDelete: NoAction, onUpdate: NoAction, map: "products_ibfk_1")
+
+  @@index([productLine], map: "productLine")
+}
